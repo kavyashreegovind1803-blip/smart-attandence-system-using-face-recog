@@ -24,6 +24,7 @@ A college project implementing an automated attendance system using facial recog
 1. **Python 3.8+** installed on your system
 2. **XAMPP** or **MySQL Server** running
 3. **Webcam** (built-in or USB camera)
+4. **docker**
 
 ## Installation
 
