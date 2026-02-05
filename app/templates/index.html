@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 text-center">
+        <h1 class="display-4 mb-4">Smart Attendance System</h1>
+        <p class="lead">Using Face Recognition Technology</p>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Register</h5>
+                <p class="card-text">Register new students/employees with face recognition</p>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Register Now</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-camera fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Mark Attendance</h5>
+                <p class="card-text">Quick attendance marking using face recognition</p>
+                <a href="{{ url_for('attendance') }}" class="btn btn-success">Mark Attendance</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-bar fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Admin Panel</h5>
+                <p class="card-text">View reports and manage the system</p>
+                <a href="{{ url_for('admin_login') }}" class="btn btn-warning">Admin Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>System Features</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Real-time face detection</li>
+                            <li><i class="fas fa-check text-success"></i> Accurate face recognition</li>
+                            <li><i class="fas fa-check text-success"></i> Automated attendance marking</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Comprehensive reporting</li>
+                            <li><i class="fas fa-check text-success"></i> User-friendly interface</li>
+                            <li><i class="fas fa-check text-success"></i> Secure data management</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

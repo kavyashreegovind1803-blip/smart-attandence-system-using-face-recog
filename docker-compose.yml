@@ -1,0 +1,46 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: attendance_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: attendance_system
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - attendance_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  web:
+    build: .
+    container_name: attendance_web
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=mysql
+      - DB_USER=appuser
+      - DB_PASSWORD=apppassword
+      - DB_NAME=attendance_system
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - attendance_network
+    volumes:
+      - ./face_encodings:/app/face_encodings
+
+volumes:
+  mysql_data:
+
+networks:
+  attendance_network:
+    driver: bridge
