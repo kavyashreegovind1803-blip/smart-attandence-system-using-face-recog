@@ -47,6 +47,81 @@ def admin_dashboard():
                          total_users=total_users, 
                          today_attendance=today_attendance)
 
+@app.route('/admin/users')
+def admin_users():
+    if 'admin_logged_in' not in session:
+        return redirect(url_for('admin_login'))
+    
+    connection = db_config.get_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT id, name, email, roll_number, created_at FROM users ORDER BY created_at DESC")
+    users = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    
+    return render_template('admin_users.html', users=users)
+
+@app.route('/admin/today_report')
+def admin_today_report():
+    if 'admin_logged_in' not in session:
+        return redirect(url_for('admin_login'))
+    
+    connection = db_config.get_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT u.name, u.roll_number, a.time 
+        FROM attendance a 
+        JOIN users u ON a.user_id = u.id 
+        WHERE a.date = %s 
+        ORDER BY a.time DESC
+    """, (date.today(),))
+    attendance_records = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    
+    return render_template('admin_today_report.html', 
+                         attendance_records=attendance_records,
+                         report_date=date.today())
+
+@app.route('/admin/monthly_report')
+def admin_monthly_report():
+    if 'admin_logged_in' not in session:
+        return redirect(url_for('admin_login'))
+    
+    connection = db_config.get_connection()
+    cursor = connection.cursor()
+    
+    # Get current month's attendance
+    cursor.execute("""
+        SELECT u.name, u.roll_number, COUNT(a.id) as days_present
+        FROM users u
+        LEFT JOIN attendance a ON u.id = a.user_id 
+            AND MONTH(a.date) = MONTH(CURDATE()) 
+            AND YEAR(a.date) = YEAR(CURDATE())
+        GROUP BY u.id, u.name, u.roll_number
+        ORDER BY u.name
+    """)
+    monthly_records = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    
+    return render_template('admin_monthly_report.html', 
+                         monthly_records=monthly_records,
+                         current_month=datetime.now().strftime('%B %Y'))
+
+@app.route('/admin/settings')
+def admin_settings():
+    if 'admin_logged_in' not in session:
+        return redirect(url_for('admin_login'))
+    
+    return render_template('admin_settings.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    flash('Logged out successfully')
+    return redirect(url_for('admin_login'))
+
 @app.route('/register')
 def register():
     return render_template('register.html')
