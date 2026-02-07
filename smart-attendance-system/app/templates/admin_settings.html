@@ -75,14 +75,234 @@
             </div>
             <div class="card-body">
                 <p class="text-muted">These actions are irreversible. Please be careful.</p>
-                <button type="button" class="btn btn-outline-danger" onclick="if(confirm('Are you sure you want to clear all attendance records?')) alert('Clear attendance functionality coming soon!')">
-                    <i class="fas fa-trash"></i> Clear All Attendance Records
-                </button>
-                <button type="button" class="btn btn-outline-danger ms-2" onclick="if(confirm('Are you sure you want to delete all users?')) alert('Delete users functionality coming soon!')">
-                    <i class="fas fa-user-times"></i> Delete All Users
-                </button>
+                
+                <!-- Clear Attendance Section -->
+                <div class="mb-4">
+                    <h6 class="text-danger"><i class="fas fa-trash-alt"></i> Clear Attendance Records</h6>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Clear by Date:</label>
+                            <div class="input-group">
+                                <input type="date" id="clearDate" class="form-control">
+                                <button type="button" class="btn btn-outline-danger" onclick="clearAttendanceByDate()">
+                                    <i class="fas fa-calendar-times"></i> Clear Date
+                                </button>
+                            </div>
+                            <small class="text-muted">Clear attendance for a specific date</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Clear All:</label>
+                            <div>
+                                <button type="button" class="btn btn-danger w-100" onclick="clearAllAttendance()">
+                                    <i class="fas fa-trash"></i> Clear All Attendance Records
+                                </button>
+                                <small class="text-muted">This will delete all attendance records permanently</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Delete Users Section -->
+                <div class="mb-3">
+                    <h6 class="text-danger"><i class="fas fa-user-times"></i> Delete Users</h6>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Delete Selected User:</label>
+                            <div class="input-group">
+                                <select id="userSelect" class="form-select">
+                                    <option value="">-- Select User --</option>
+                                </select>
+                                <button type="button" class="btn btn-outline-danger" onclick="deleteSelectedUser()">
+                                    <i class="fas fa-user-minus"></i> Delete
+                                </button>
+                            </div>
+                            <small class="text-muted">Delete a specific user and their attendance</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Delete All Users:</label>
+                            <div>
+                                <button type="button" class="btn btn-danger w-100" onclick="deleteAllUsers()">
+                                    <i class="fas fa-users-slash"></i> Delete All Users
+                                </button>
+                                <small class="text-muted">This will delete all users and their attendance permanently</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Load users when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadUsers();
+});
+
+// Load users for dropdown
+function loadUsers() {
+    fetch('/admin/get_users_list')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('userSelect');
+                select.innerHTML = '<option value="">-- Select User --</option>';
+                data.users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = `${user.name} (${user.roll_number})`;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading users:', error));
+}
+
+// Clear attendance by date
+function clearAttendanceByDate() {
+    const dateInput = document.getElementById('clearDate');
+    const date = dateInput.value;
+    
+    if (!date) {
+        alert('Please select a date first!');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to clear all attendance records for ${date}?\n\nThis action cannot be undone!`)) {
+        return;
+    }
+    
+    fetch('/admin/clear_attendance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: 'date',
+            date: date
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            dateInput.value = '';
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+
+// Clear all attendance
+function clearAllAttendance() {
+    if (!confirm('⚠️ WARNING ⚠️\n\nAre you sure you want to clear ALL attendance records?\n\nThis will permanently delete all attendance data from the system.\n\nThis action CANNOT be undone!')) {
+        return;
+    }
+    
+    // Double confirmation
+    if (!confirm('FINAL CONFIRMATION:\n\nClick OK to permanently delete all attendance records.')) {
+        return;
+    }
+    
+    fetch('/admin/clear_attendance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: 'all'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+
+// Delete selected user
+function deleteSelectedUser() {
+    const select = document.getElementById('userSelect');
+    const userId = select.value;
+    const userName = select.options[select.selectedIndex].text;
+    
+    if (!userId) {
+        alert('Please select a user first!');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete user:\n\n${userName}\n\nThis will also delete all their attendance records.\n\nThis action cannot be undone!`)) {
+        return;
+    }
+    
+    fetch('/admin/delete_user', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: 'single',
+            user_id: userId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            loadUsers(); // Reload user list
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+
+// Delete all users
+function deleteAllUsers() {
+    if (!confirm('⚠️ CRITICAL WARNING ⚠️\n\nAre you sure you want to delete ALL USERS?\n\nThis will permanently delete:\n- All user accounts\n- All attendance records\n- All face recognition data\n\nThis action CANNOT be undone!')) {
+        return;
+    }
+    
+    // Double confirmation
+    if (!confirm('FINAL CONFIRMATION:\n\nClick OK to permanently delete all users and their data.')) {
+        return;
+    }
+    
+    fetch('/admin/delete_user', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: 'all'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            loadUsers(); // Reload user list (will be empty)
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+</script>
 {% endblock %}

@@ -37,7 +37,20 @@
                                 <td>{{ loop.index }}</td>
                                 <td>{{ record[0] }}</td>
                                 <td>{{ record[1] }}</td>
-                                <td>{{ record[2].strftime('%H:%M:%S') if record[2] else 'N/A' }}</td>
+                                <td>
+                                    {% if record[2] %}
+                                        {% if record[2].__class__.__name__ == 'timedelta' %}
+                                            {% set hours = (record[2].total_seconds() // 3600)|int %}
+                                            {% set minutes = ((record[2].total_seconds() % 3600) // 60)|int %}
+                                            {% set seconds = (record[2].total_seconds() % 60)|int %}
+                                            {{ '%02d:%02d:%02d'|format(hours, minutes, seconds) }}
+                                        {% else %}
+                                            {{ record[2].strftime('%H:%M:%S') }}
+                                        {% endif %}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

@@ -6,6 +6,7 @@ from PIL import Image
 import io
 import pickle
 import os
+import re
 from datetime import datetime, date
 from config.database import DatabaseConfig
 from utils.face_utils import FaceRecognitionUtils
@@ -122,6 +123,99 @@ def admin_logout():
     flash('Logged out successfully')
     return redirect(url_for('admin_login'))
 
+@app.route('/admin/clear_attendance', methods=['POST'])
+def clear_attendance():
+    if 'admin_logged_in' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'})
+    
+    data = request.get_json()
+    clear_type = data.get('type', 'all')
+    date_value = data.get('date', None)
+    
+    try:
+        connection = db_config.get_connection()
+        cursor = connection.cursor()
+        
+        if clear_type == 'date' and date_value:
+            cursor.execute("DELETE FROM attendance WHERE date = %s", (date_value,))
+            affected = cursor.rowcount
+            connection.commit()
+            cursor.close()
+            connection.close()
+            return jsonify({'success': True, 'message': f'Cleared {affected} attendance record(s) for {date_value}'})
+        elif clear_type == 'all':
+            cursor.execute("DELETE FROM attendance")
+            affected = cursor.rowcount
+            connection.commit()
+            cursor.close()
+            connection.close()
+            return jsonify({'success': True, 'message': f'Cleared all {affected} attendance records'})
+        else:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'message': 'Invalid request'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/admin/delete_user', methods=['POST'])
+def delete_user():
+    if 'admin_logged_in' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'})
+    
+    data = request.get_json()
+    delete_type = data.get('type', 'single')
+    user_id = data.get('user_id', None)
+    
+    try:
+        connection = db_config.get_connection()
+        cursor = connection.cursor()
+        
+        if delete_type == 'single' and user_id:
+            # Delete user's attendance first
+            cursor.execute("DELETE FROM attendance WHERE user_id = %s", (user_id,))
+            # Delete user
+            cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            return jsonify({'success': True, 'message': 'User deleted successfully'})
+        elif delete_type == 'all':
+            # Delete all attendance first
+            cursor.execute("DELETE FROM attendance")
+            # Delete all users
+            cursor.execute("DELETE FROM users")
+            affected = cursor.rowcount
+            connection.commit()
+            cursor.close()
+            connection.close()
+            return jsonify({'success': True, 'message': f'Deleted all {affected} users'})
+        else:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'message': 'Invalid request'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/admin/get_users_list', methods=['GET'])
+def get_users_list():
+    if 'admin_logged_in' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'})
+    
+    try:
+        connection = db_config.get_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT id, name, roll_number FROM users ORDER BY name")
+        users = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        
+        users_list = [{'id': user[0], 'name': user[1], 'roll_number': user[2]} for user in users]
+        return jsonify({'success': True, 'users': users_list})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
 @app.route('/register')
 def register():
     return render_template('register.html')
@@ -216,10 +310,47 @@ def register_user():
     email = request.form['email']
     roll_number = request.form['roll_number']
     
-    # Redirect to camera capture page with user data
+    # Server-side validation
+    # Validate name (alphabets and spaces only, max 60 chars)
+    if not name or len(name) > 60 or not all(c.isalpha() or c.isspace() for c in name):
+        flash('Invalid name. Use alphabets only (maximum 60 characters).', 'danger')
+        return redirect(url_for('register'))
+    
+    # Validate email format
+    email_regex = r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_regex, email):
+        flash('Invalid email format. Please use format like user@gmail.com', 'danger')
+        return redirect(url_for('register'))
+    
+    # Check for duplicates
+    connection = db_config.get_connection()
+    cursor = connection.cursor()
+    
+    # Check for duplicate roll number
+    cursor.execute("SELECT name FROM users WHERE roll_number = %s", (roll_number,))
+    existing_roll = cursor.fetchone()
+    if existing_roll:
+        cursor.close()
+        connection.close()
+        flash(f'Roll number already registered with user: {existing_roll[0]}', 'danger')
+        return redirect(url_for('register'))
+    
+    # Check for duplicate email
+    cursor.execute("SELECT name FROM users WHERE email = %s", (email,))
+    existing_email = cursor.fetchone()
+    if existing_email:
+        cursor.close()
+        connection.close()
+        flash(f'Email already registered with user: {existing_email[0]}', 'danger')
+        return redirect(url_for('register'))
+    
+    cursor.close()
+    connection.close()
+    
+    # All validations passed, redirect to camera capture page
     return render_template('capture_photo.html', 
                          name=name, 
-                         email=email, 
+                         email=email,
                          roll_number=roll_number)
 
 @app.route('/register_user_with_photo', methods=['POST'])
@@ -239,13 +370,35 @@ def register_user_with_photo():
         image = Image.open(io.BytesIO(image_bytes))
         image_array = np.array(image)
         
-        # Generate a simple face encoding (demo version)
+        # Generate face encoding
         face_encoding = face_utils.process_image_for_encoding(image_array)
         
         if face_encoding is not None:
             connection = db_config.get_connection()
             cursor = connection.cursor()
             
+            # Check for duplicate face
+            cursor.execute("SELECT id, name, face_encoding FROM users")
+            existing_users = cursor.fetchall()
+            
+            if existing_users:
+                # Compare with all existing faces
+                for user in existing_users:
+                    user_id, user_name, stored_encoding_hex = user
+                    stored_encoding = pickle.loads(bytes.fromhex(stored_encoding_hex))
+                    
+                    # Compare faces with tolerance of 0.3 (stricter matching)
+                    match_index, distance = face_utils.compare_faces([stored_encoding], face_encoding, tolerance=0.3)
+                    
+                    if match_index is not None:
+                        cursor.close()
+                        connection.close()
+                        return jsonify({
+                            'success': False, 
+                            'message': f'This face is already registered with user: {user_name}. Please use a different photo or contact admin.'
+                        })
+            
+            # No duplicate found, proceed with registration
             # Convert face encoding to string for storage
             encoding_str = pickle.dumps(face_encoding).hex()
             

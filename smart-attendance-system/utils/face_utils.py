@@ -62,23 +62,34 @@ class FaceRecognitionUtils:
         faces = self.face_cascade.detectMultiScale(gray, 1.1, 4)
         return faces, []
     
-    def compare_faces(self, known_encodings, face_encoding, tolerance=0.6):
-        """Simple face comparison for demo"""
+    def compare_faces(self, known_encodings, face_encoding, tolerance=0.3):
+        """Compare face encodings using cosine similarity"""
         if len(known_encodings) == 0:
             return None, None
         
-        # Simple distance calculation for demo
+        # Calculate distances using cosine similarity
         distances = []
         for known_encoding in known_encodings:
-            # Calculate Euclidean distance
-            distance = np.linalg.norm(np.array(known_encoding) - np.array(face_encoding))
+            known = np.array(known_encoding)
+            current = np.array(face_encoding)
+            
+            # Cosine similarity (converted to distance)
+            dot_product = np.dot(known, current)
+            norm_product = np.linalg.norm(known) * np.linalg.norm(current)
+            
+            if norm_product == 0:
+                distance = 1.0
+            else:
+                similarity = dot_product / norm_product
+                distance = 1 - similarity  # Convert similarity to distance
+            
             distances.append(distance)
         
         min_distance_index = np.argmin(distances)
         min_distance = distances[min_distance_index]
         
-        # For demo purposes, accept if distance is reasonable
-        if min_distance < 50:  # Arbitrary threshold for demo
+        # Match if distance is below tolerance
+        if min_distance < tolerance:
             return min_distance_index, min_distance
         
         return None, None
@@ -98,17 +109,28 @@ class FaceRecognitionUtils:
             if len(faces) > 0:
                 # Get the first detected face
                 x, y, w, h = faces[0]
-                # Create a simple "encoding" based on face characteristics
+                # Extract face region
                 face_region = gray[y:y+h, x:x+w]
                 
-                # Generate encoding based on face region statistics
-                encoding = np.array([
-                    x, y, w, h,  # Position and size
-                    np.mean(face_region),  # Average intensity
-                    np.std(face_region),   # Standard deviation
-                    np.min(face_region),   # Min intensity
-                    np.max(face_region)    # Max intensity
-                ] + [np.random.rand() for _ in range(120)])  # Random features for demo
+                # Resize face to standard size for consistent comparison
+                face_resized = cv2.resize(face_region, (100, 100))
+                
+                # Generate encoding based on face region characteristics
+                # Use histogram and statistical features for better uniqueness
+                hist = cv2.calcHist([face_resized], [0], None, [32], [0, 256])
+                hist = hist.flatten() / hist.sum()  # Normalize histogram
+                
+                # Statistical features
+                stats = np.array([
+                    np.mean(face_resized),
+                    np.std(face_resized),
+                    np.median(face_resized),
+                    np.min(face_resized),
+                    np.max(face_resized)
+                ])
+                
+                # Combine features into encoding
+                encoding = np.concatenate([hist, stats])
                 
                 return encoding
             else:

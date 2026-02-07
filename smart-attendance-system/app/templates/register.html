@@ -8,30 +8,55 @@
                 <h5><i class="fas fa-user-plus"></i> Register New User</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('register_user') }}">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle"></i> {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST" action="{{ url_for('register_user') }}" id="registerForm">
                     <div class="mb-3">
                         <label for="name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               pattern="[A-Za-z\s]{1,60}" 
+                               maxlength="60"
+                               placeholder="Enter full name (alphabets only)"
+                               required>
+                        <small class="text-muted">Maximum 60 characters, alphabets and spaces only</small>
+                        <div id="nameError" class="text-danger" style="display: none;"></div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               placeholder="example@domain.com"
+                               required>
+                        <small class="text-muted">Valid email format required (e.g., user@gmail.com)</small>
+                        <div id="emailError" class="text-danger" style="display: none;"></div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="roll_number" class="form-label">Roll Number / Employee ID</label>
-                        <input type="text" class="form-control" id="roll_number" name="roll_number" required>
+                        <input type="text" class="form-control" id="roll_number" name="roll_number" 
+                               placeholder="Enter roll number or employee ID"
+                               required>
+                        <small class="text-muted">Unique identifier for the user</small>
                     </div>
                     
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
                         <strong>Note:</strong> After clicking register, your camera will open. 
-                        Position your face clearly in the frame and press SPACE to capture.
+                        Position your face clearly in the frame and capture your photo.
                     </div>
                     
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-camera"></i> Register with Face
+                        <i class="fas fa-camera"></i> Proceed to Capture Face
                     </button>
                     <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
                 </form>
@@ -59,4 +84,118 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const nameError = document.getElementById('nameError');
+    const emailError = document.getElementById('emailError');
+    
+    let isValid = true;
+    
+    // Reset errors
+    nameError.style.display = 'none';
+    emailError.style.display = 'none';
+    nameInput.classList.remove('is-invalid');
+    emailInput.classList.remove('is-invalid');
+    
+    // Validate Name
+    const name = nameInput.value.trim();
+    if (name.length === 0) {
+        e.preventDefault();
+        nameError.textContent = 'Name is required.';
+        nameError.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        nameInput.focus();
+        return false;
+    }
+    
+    if (name.length > 60) {
+        e.preventDefault();
+        nameError.textContent = 'Name must not exceed 60 characters.';
+        nameError.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        nameInput.focus();
+        return false;
+    }
+    
+    // Check for alphabets and spaces only
+    if (!/^[A-Za-z\s]+$/.test(name)) {
+        e.preventDefault();
+        nameError.textContent = 'Name should contain only alphabets and spaces (no numbers or special characters).';
+        nameError.style.display = 'block';
+        nameInput.classList.add('is-invalid');
+        nameInput.focus();
+        return false;
+    }
+    
+    // Validate Email
+    const email = emailInput.value.trim();
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    if (!emailRegex.test(email)) {
+        e.preventDefault();
+        emailError.textContent = 'Please enter a valid email address (e.g., user@gmail.com).';
+        emailError.style.display = 'block';
+        emailInput.classList.add('is-invalid');
+        emailInput.focus();
+        return false;
+    }
+    
+    // Check if @ is in the middle
+    const atIndex = email.indexOf('@');
+    if (atIndex <= 0 || atIndex >= email.length - 1) {
+        e.preventDefault();
+        emailError.textContent = 'Email must have @ in the middle with text before and after.';
+        emailError.style.display = 'block';
+        emailInput.classList.add('is-invalid');
+        emailInput.focus();
+        return false;
+    }
+    
+    // Check domain format (must have . after @)
+    const domain = email.substring(atIndex + 1);
+    if (!domain.includes('.') || domain.indexOf('.') === 0 || domain.lastIndexOf('.') === domain.length - 1) {
+        e.preventDefault();
+        emailError.textContent = 'Email domain must be in format like gmail.com, outlook.com, etc.';
+        emailError.style.display = 'block';
+        emailInput.classList.add('is-invalid');
+        emailInput.focus();
+        return false;
+    }
+});
+
+// Real-time validation for Name
+document.getElementById('name').addEventListener('input', function(e) {
+    const nameError = document.getElementById('nameError');
+    let value = e.target.value;
+    
+    // Remove non-alphabetic characters except spaces
+    value = value.replace(/[^A-Za-z\s]/g, '');
+    
+    // Limit to 60 characters
+    if (value.length > 60) {
+        value = value.slice(0, 60);
+    }
+    
+    e.target.value = value;
+    
+    if (value.length > 0) {
+        nameError.style.display = 'none';
+        e.target.classList.remove('is-invalid');
+    }
+});
+
+// Real-time validation for Email
+document.getElementById('email').addEventListener('input', function(e) {
+    const emailError = document.getElementById('emailError');
+    if (e.target.value.length > 0) {
+        emailError.style.display = 'none';
+        e.target.classList.remove('is-invalid');
+    }
+});
+</script>
 {% endblock %}

@@ -14,18 +14,11 @@ A modern, automated attendance management system that uses facial recognition te
 - [Features](#-features)
 - [Prerequisites](#-prerequisites)
 - [Installation Guide](#-installation-guide)
-  - [Step 1: Clone the Repository](#step-1-clone-the-repository)
-  - [Step 2: Navigate to Project Directory](#step-2-navigate-to-project-directory)
-  - [Step 3: Run with Docker](#step-3-run-with-docker)
-  - [Step 4: Access the Application](#step-4-access-the-application)
 - [Application Guide](#-application-guide)
-  - [User Features](#user-features)
-  - [Admin Features](#admin-features)
+- [Admin Features](#-admin-features)
+- [Validation Rules](#-validation-rules)
 - [Troubleshooting](#-troubleshooting)
 - [Technology Stack](#-technology-stack)
-- [Project Structure](#-project-structure)
-- [Contributing](#-contributing)
-- [License](#-license)
 
 ---
 
@@ -35,14 +28,16 @@ A modern, automated attendance management system that uses facial recognition te
 - **Real-time Face Detection & Recognition** - Automatic face detection using camera
 - **Automated Attendance Marking** - No manual intervention required
 - **Duplicate Prevention** - Cannot mark attendance twice in a day
-- **User Registration** - Easy registration with face capture
-- **Admin Dashboard** - Comprehensive management interface
+- **User Registration with Validation** - Comprehensive form validation
+- **Admin Dashboard** - Complete management interface
 
 ### 📊 Admin Features
-- **User Management** - View all registered users
-- **Today's Report** - Real-time attendance tracking
+- **User Management** - View all registered users with complete details
+- **Today's Report** - Real-time attendance tracking with timestamps
 - **Monthly Analytics** - Attendance percentage with color-coded indicators
-- **Settings Panel** - System configuration options
+- **Settings Panel** - System configuration and data management
+- **Clear Attendance** - Clear by specific date or all records
+- **Delete Users** - Delete individual or all users
 - **Secure Login** - Session-based authentication
 
 ### 🎨 UI/UX Features
@@ -50,6 +45,14 @@ A modern, automated attendance management system that uses facial recognition te
 - **Modern Interface** - Bootstrap 5 with Font Awesome icons
 - **Easy Navigation** - Intuitive user interface
 - **Real-time Camera Feed** - Live preview during registration and attendance
+- **Form Validation** - Client-side and server-side validation
+
+### ✅ Validation Features
+- **Name Validation** - Alphabets only, max 60 characters
+- **Email Validation** - Proper format with @ and domain
+- **Mobile Validation** - 10 digits, starts with 6-9, no country code
+- **Duplicate Checks** - Mobile, email, and roll number uniqueness
+- **Real-time Feedback** - Instant error messages on form
 
 ---
 
@@ -195,22 +198,36 @@ http://localhost:5000
 **Steps to Register:**
 
 1. **Fill the Registration Form:**
-   - Enter your **Full Name**
-   - Enter your **Email Address**
-   - Enter your **Roll Number** (Student ID)
-   - Click **"Register"** button
+   - **Full Name:** Enter your full name (alphabets and spaces only, max 60 characters)
+   - **Email:** Enter valid email (e.g., user@gmail.com, user@outlook.com)
+   - **Mobile Number:** Enter 10 digits starting with 6, 7, 8, or 9 (no +91 or 0)
+   - **Roll Number:** Enter your roll number or employee ID
+   - Click **"Proceed to Capture Face"** button
 
-2. **Capture Your Photo:**
+2. **Form Validation:**
+   - Name: Only alphabets and spaces allowed
+   - Email: Must have @ and proper domain format
+   - Mobile: Exactly 10 digits, no country code
+   - All fields are validated before proceeding
+
+3. **Capture Your Photo:**
    - Allow camera access when prompted by browser
    - Position your face in the camera frame
    - Make sure your face is clearly visible
    - Click **"Capture Photo"** button
    - Review the captured photo
-   - Click **"Submit Registration"**
+   - Click **"Confirm & Register"**
 
-3. **Success:**
+4. **Success:**
    - You'll see a success message
    - Your face is now registered in the system
+
+**Validation Rules:**
+- ✅ Name: Alphabets only, max 60 characters
+- ✅ Email: Valid format (user@domain.com)
+- ✅ Mobile: 10 digits, starts with 6-9
+- ❌ Mobile cannot start with 91 or 0
+- ✅ Duplicate mobile/email/roll number not allowed
 
 **Tips for Best Results:**
 - ✅ Good lighting (face should be well-lit)
@@ -308,6 +325,7 @@ Password: admin123
   - User ID
   - Full Name
   - Email Address
+  - Mobile Number (10 digits)
   - Roll Number
   - Registration Date & Time
 - Total user count at bottom
@@ -315,7 +333,7 @@ Password: admin123
 
 **Use Cases:**
 - Check who is registered in the system
-- Verify user information
+- Verify user information including mobile numbers
 - Get registration timestamps
 
 ---
@@ -376,18 +394,51 @@ Password: admin123
 
 **1. Admin Profile Section:**
 - View current username
-- Change password (coming soon)
+- Change password (placeholder for future implementation)
 
 **2. System Settings:**
 - Working days per month (default: 22)
 - Minimum attendance percentage (default: 75%)
 - Face recognition threshold (default: 0.6)
 
-**3. Danger Zone:**
-- Clear all attendance records (with confirmation)
-- Delete all users (with confirmation)
+**3. Clear Attendance Records:**
+- **Clear by Date:** Select specific date and clear that day's attendance
+- **Clear All:** Delete all attendance records from system
+- Double confirmation required for safety
 
-**⚠️ Warning:** Actions in Danger Zone are irreversible!
+**4. Delete Users:**
+- **Delete Selected User:** Choose user from dropdown and delete
+- **Delete All Users:** Remove all users and their attendance
+- Cascading delete (removes user's attendance first)
+- Double confirmation required
+
+**⚠️ Warning:** Actions in Clear Attendance and Delete Users sections are irreversible!
+
+**How to Use:**
+
+**Clear Attendance by Date:**
+1. Select date from calendar
+2. Click "Clear Date" button
+3. Confirm action
+4. Success message shows number of records deleted
+
+**Clear All Attendance:**
+1. Click "Clear All Attendance Records"
+2. Confirm first warning
+3. Confirm second warning (final)
+4. All attendance records deleted
+
+**Delete Selected User:**
+1. Select user from dropdown (shows name and roll number)
+2. Click "Delete" button
+3. Confirm action
+4. User and their attendance deleted
+
+**Delete All Users:**
+1. Click "Delete All Users"
+2. Confirm first warning
+3. Confirm second warning (final)
+4. All users and attendance deleted
 
 ---
 
@@ -401,6 +452,55 @@ Password: admin123
 3. Redirected to admin login page
 
 **Security Note:** Always logout when finished, especially on shared computers.
+
+---
+
+## 📝 Validation Rules
+
+### Registration Form Validation
+
+#### Name Field:
+- **Maximum Length:** 60 characters
+- **Allowed:** Alphabets (A-Z, a-z) and spaces only
+- **Not Allowed:** Numbers, special characters, symbols
+- **Examples:**
+  - ✅ Valid: `John Doe`, `Mary Jane Watson`
+  - ❌ Invalid: `John123`, `John@Doe`, `John_Doe`
+
+#### Email Field:
+- **Format:** username@domain.extension
+- **Requirements:**
+  - Must have @ symbol in the middle
+  - Domain must have format like gmail.com, outlook.com, ninjacart.in
+  - Extension minimum 2 characters
+- **Examples:**
+  - ✅ Valid: `user@gmail.com`, `john.doe@outlook.com`, `employee@ninjacart.in`
+  - ❌ Invalid: `user@`, `@gmail.com`, `usergmail.com`, `user@domain`
+
+#### Mobile Number Field:
+- **Length:** Exactly 10 digits
+- **First Digit:** Must be 6, 7, 8, or 9
+- **Not Allowed:** Country code (+91), leading zero (0)
+- **Examples:**
+  - ✅ Valid: `9876543210`, `8765432109`, `7654321098`
+  - ❌ Invalid: `919876543210`, `09876543210`, `5876543210`, `987654321`
+
+#### Roll Number Field:
+- **Format:** Any alphanumeric format
+- **Must be unique:** Cannot register same roll number twice
+
+### Duplicate Checks:
+- ✅ **Mobile Number:** Must be unique (checked before camera page)
+- ✅ **Email:** Must be unique (checked before camera page)
+- ✅ **Roll Number:** Must be unique (checked before camera page)
+- ✅ **Name:** Can be duplicate (same name allowed for different users)
+
+### Validation Flow:
+1. **Frontend Validation:** Real-time input filtering and format checking
+2. **Form Submission:** JavaScript validation before proceeding
+3. **Backend Validation:** Server-side validation and duplicate checks
+4. **Error Display:** Clear error messages on registration form
+5. **Camera Page:** Only accessible if all validations pass
 
 ---
 
@@ -508,7 +608,35 @@ ports:
 
 ---
 
-### Issue 5: Database connection error
+### Issue 5: Registration form validation errors
+
+**Error:** Various validation errors on registration form
+
+**Solutions:**
+
+**Name Error:**
+- Use only alphabets and spaces
+- Maximum 60 characters
+- No numbers or special characters
+
+**Email Error:**
+- Must have @ symbol
+- Domain format: gmail.com, outlook.com, etc.
+- Example: user@domain.com
+
+**Mobile Error:**
+- Exactly 10 digits
+- Start with 6, 7, 8, or 9
+- No country code (+91) or leading zero (0)
+
+**Duplicate Error:**
+- Mobile/Email/Roll already registered
+- Use different mobile number or email
+- Check with admin if needed
+
+---
+
+### Issue 6: Database connection error
 
 **Error:** "Can't connect to MySQL server"
 
@@ -525,7 +653,7 @@ docker-compose restart mysql
 
 ---
 
-### Issue 6: Containers not starting
+### Issue 7: Containers not starting
 
 **Error:** Various startup errors
 
@@ -538,6 +666,18 @@ docker-compose up -d --build
 # Check logs for specific errors
 docker-compose logs -f
 ```
+
+---
+
+### Issue 8: Admin today's report not loading
+
+**Error:** Internal server error on today's report page
+
+**Solution:**
+- Make sure you're logged in as admin
+- Check if there's attendance data
+- Restart web container: `docker-compose restart web`
+- Check logs: `docker-compose logs web --tail 50`
 
 ---
 
@@ -657,18 +797,30 @@ If you encounter any issues or have questions:
 
 ## 🔄 Version History
 
-- **v1.0.0** (Current)
+- **v1.0.0** (Current - February 2026)
   - Initial release
   - Face detection and recognition
-  - User registration
-  - Attendance marking
-  - Admin dashboard with reports
-  - Docker deployment
+  - User registration with comprehensive validation
+  - Mobile number field (10 digits, 6-9 start)
+  - Name validation (alphabets only, max 60 chars)
+  - Email validation (proper format with @ and domain)
+  - Duplicate checks (mobile, email, roll number)
+  - Attendance marking with duplicate prevention
+  - Admin dashboard with complete reports
+  - Today's attendance report with time display
+  - Monthly report with color-coded percentages
+  - Clear attendance by date or all
+  - Delete users (selected or all)
+  - Settings panel with system configuration
+  - Docker deployment with MySQL
+  - Session-based authentication
+  - Responsive Bootstrap 5 UI
 
 ---
 
 ## 🎯 Future Enhancements
 
+- [ ] Duplicate face detection during registration
 - [ ] Mobile application (Android/iOS)
 - [ ] Cloud deployment (AWS/Azure/GCP)
 - [ ] Email notifications for attendance
@@ -679,6 +831,9 @@ If you encounter any issues or have questions:
 - [ ] Advanced analytics and insights
 - [ ] Attendance prediction using ML
 - [ ] QR code backup attendance method
+- [ ] Password change functionality for admin
+- [ ] Bulk user import via CSV
+- [ ] Attendance reports by date range
 
 ---
 
